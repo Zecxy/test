@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connect to Solana Wallet</title>
+</head>
+<body>
+  <button id="connectButton">Connect Wallet</button>
+  <button id="checkBalanceButton" style="display:none;">Check Balance</button>
+  <p id="balance"></p>
+
+  <!-- Include Solana Web3.js and Phantom Wallet Adapter -->
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.49.0/dist/solana-web3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.8.0/dist/phantom.js"></script>
+
+  <script type="module">
+    import { Connection, clusterApiUrl, LAMPORTS_PER_SOL } from 'https://cdn.jsdelivr.net/npm/@solana/web3.js@1.49.0/dist/solana-web3.min.js';
+    import { PhantomWalletAdapter } from 'https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.8.0/dist/phantom.js';
+
+    // Elements
+    const connectButton = document.getElementById('connectButton');
+    const checkBalanceButton = document.getElementById('checkBalanceButton');
+    const balanceElement = document.getElementById('balance');
+
+    // Initialize connection and wallet
+    const network = clusterApiUrl('devnet');
+    const connection = new Connection(network, 'confirmed');
+    const wallet = new PhantomWalletAdapter();
+
+    // Connect to wallet
+    connectButton.addEventListener('click', async () => {
+      try {
+        await wallet.connect();
+        console.log('Connected to wallet:', wallet.publicKey.toBase58());
+        connectButton.style.display = 'none';
+        checkBalanceButton.style.display = 'block';
+      } catch (err) {
+        console.error('Failed to connect to wallet:', err);
+        alert('Failed to connect to wallet. Please ensure Phantom is installed and try again.');
+      }
+    });
+
+    // Check balance
+    checkBalanceButton.addEventListener('click', async () => {
+      if (!wallet.publicKey) {
+        alert('Wallet is not connected.');
+        return;
+      }
+      try {
+        const balance = await connection.getBalance(wallet.publicKey);
+        balanceElement.textContent = `Balance: ${balance / LAMPORTS_PER_SOL} SOL`;
+      } catch (err) {
+        console.error('Failed to fetch balance:', err);
+        alert('Failed to fetch balance. Please try again.');
+      }
+    });
+
+    // Optional: Handle disconnect and cleanup
+    window.addEventListener('beforeunload', () => {
+      if (wallet.connected) {
+        wallet.disconnect();
+      }
+    });
+  </script>
+</body>
+</html>
